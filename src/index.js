@@ -280,49 +280,164 @@
 // Виводить модальне вікно з повідомленням про статус гри ('Winner' або 'Loser')
 // Для модального вікна використовуй бібліотеку basicLightbox
 // Після повторного натискання на кнопку "Start game" поле має очищатись, а гра починатись з початку.
-const selectors = {
-  startBtn: document.querySelector('.js-start'),
-  container: document.querySelector('.js-container'),
-};
+// const selectors = {
+//   startBtn: document.querySelector('.js-start'),
+//   container: document.querySelector('.js-container'),
+// };
 
-selectors.startBtn.addEventListener('click', handlerStart);
+// selectors.startBtn.addEventListener('click', handlerStart);
 
-function handlerStart(evt) {
-    evt.target.disabled = true;
-  const promises = [...selectors.container.children].map(createPromise);
-    // const promises = Array.from(selectors.container.children).map((_)=>createPromise());
-    Promise.allSettled(promises).then((items) => {
-    items.forEach((item, i) => {
-    const child = selectors.container.children[i];
-        child.textContent = "";
+// function handlerStart(evt) {
+//     evt.target.disabled = true;
+//   const promises = [...selectors.container.children].map(createPromise);
+//     // const promises = Array.from(selectors.container.children).map((_)=>createPromise());
+//     Promise.allSettled(promises).then((items) => {
+//     items.forEach((item, i) => {
+//     const child = selectors.container.children[i];
+//         child.textContent = "";
         
 
-    setTimeout(() => {
-        child.textContent = item.value || item.reason
+//     setTimeout(() => {
+//         child.textContent = item.value || item.reason
         
-    if (items.length-1===i) {
-    const instance = basicLightbox.create(`
-	<h1>${isWinner ? "Winner" : "Loser"}</h1>
-`)
-        instance.show()
-        evt.target.disabled = false;
-    }}, 1000 * (i + 1));
-    });
+//     if (items.length-1===i) {
+//     const instance = basicLightbox.create(`
+// 	<h1>${isWinner ? "Winner" : "Loser"}</h1>
+// `)
+//         instance.show()
+//         evt.target.disabled = false;
+//     }}, 1000 * (i + 1));
+//     });
         
-        const isWinner =
-            items.every(({ status }) => status === 'fulfilled') ||
-            items.every(({ status }) => status === "rejected")
-    })
+//         const isWinner =
+//             items.every(({ status }) => status === 'fulfilled') ||
+//             items.every(({ status }) => status === "rejected")
+//     })
 
+// }
+
+// function createPromise() {
+//   return new Promise((resolve, reject) => {
+//     const random = Math.random();
+//     if (random > 0.5) {
+//       resolve('🍋');
+//     } else {
+//       reject('🍒');
+//     }
+//   });
+// }
+
+// --------------- MODULE 10-----------------
+// ----------WORK WITH BACKEND---------------
+
+// const fetchUsersBtn = document.querySelector(".btn");
+// const userList = document.querySelector(".user-list");
+
+// fetchUsersBtn.addEventListener("click", () => {
+//   fetchUsers()
+//     .then((users) => renderUsers(users))
+//     .catch((error) => console.log(error));
+// });
+
+// function fetchUsers() {
+//   return fetch(
+//     "https://jsonplaceholder.typicode.com/users?_limit=7&_sort=name"
+//   ).then((response) => {
+//     if (!response.ok) {
+//       throw new Error(response.status);
+//     }
+//     return response.json();
+//   });
+// }
+
+// function renderUsers(users) {
+//   const markup = users
+//     .map((user) => {
+//       return `
+//           <li>
+//             <p><b>Name</b>: ${user.name}</p>
+//             <p><b>Email</b>: ${user.email}</p>
+//             <p><b>Company</b>: ${user.company.name}</p>
+//           </li>
+//       `;
+//     })
+//     .join("");
+//   userList.insertAdjacentHTML("beforeend", markup);
+// }
+
+// --------------PRACTICE-------------------------
+// Потрібно створити функціонал для отримання прогнозу погоди в місті.
+// Використай публічне API https://www.weatherapi.com/docs/
+// Використовуй ендпоінт Forecast для того, щоб отримати прогноз погоди на декілька днів.
+
+// Створи форму в яку користувач:
+// 1 вводить назву міста.
+// 2 обирає на яку кількість днів він хоче отримати прогноз погоди (3, 5 та 7 днів).
+// (Іноді параметр не працює в такому випадку можна зробити пошук на 1, 2 та 3 дні)
+// Приклад форми https://prnt.sc/kFmLOj6gBdv-
+
+// Після сабміту форми відмалюй картки з інформацією отриманою з бекенду.
+// Картка має містити відомості про:
+// 1 Зображення з погодою (icon)
+// 2 Текст з погодою (text)
+// 3 Дату (date)
+// 4 Середню температуру в Цельсія (avgtemp_c)
+// Приклад картки https://prnt.sc/h_p-A6Hty-i-
+
+// !!! ЗВЕРНИ УВАГУ ЩО API_KEY ПІСЛЯ РЕЄСТРАЦІЇ ВАЛІДНИЙ 21 ДЕНЬ !!!.
+
+// 61069fb8abf74210b7d232148231510
+
+
+const elements = {
+  form: document.querySelector('.js-search-form'),
+  list:document.querySelector(".js-list")
+}
+// console.log(elements.form);
+
+elements.form.addEventListener('submit', handlerForecast)
+
+function handlerForecast(event) {
+  event.preventDefault();
+  // console.dir(event.currentTarget); 
+  const { city, days } = event.currentTarget.elements
+
+  serviceWeather(city.value,days.value)
+  .then((data) => elements.list.innerHTML = createMarkup(data.forecast.forecastday))
+  .catch(error => console.log(error))
 }
 
-function createPromise() {
-  return new Promise((resolve, reject) => {
-    const random = Math.random();
-    if (random > 0.5) {
-      resolve('🍋');
-    } else {
-      reject('🍒');
-    }
-  });
+function serviceWeather(city,days) {
+  const BASE_URL='http://api.weatherapi.com/v1'
+  const API_KEY = '61069fb8abf74210b7d232148231510'
+  const params = new URLSearchParams({
+    key: API_KEY,
+    q: city,
+    lang: "uk",
+    days,
+  })
+  
+  return fetch
+    (`${BASE_URL}/forecast.json?${params}`)
+    .then(response => {
+      // console.log(response);
+      if (!response.ok) {
+        throw new Error(response.statusText)
+      }
+      return response.json()
+    });
+ 
+}
+
+function createMarkup(arr) {
+  return arr.map(({
+    date, day: {
+      avgtemp_c, condition:{icon,text}
+} }) =>`      
+  <li class="weather-card">
+        <img src="${icon}" alt="${text}" class="weather-icon">
+        <h2 class="date">${date}</h2>
+        <h3 class="weather-text">${text}</h3>
+        <h3 class=" temperature">${avgtemp_c} °C</h3>
+  </li>`).join('')
 }
